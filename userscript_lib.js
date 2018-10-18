@@ -168,6 +168,9 @@
     });
     IDElementWrapper._instances_by_id = new Map();
     
+    /* 
+     * Sends an asynchronous xhr GET request
+     */
     set_global('async_xhr_get', function async_xhr_get(url, enable_html){
         function make_request(resolve, reject){
             const req = new XMLHttpRequest();
@@ -191,6 +194,9 @@
         return new Promise(make_request);
     });
     
+    /* 
+     * Sends an asynchronous xhr POST request
+     */
     set_global('async_xhr_post', function async_xhr_post(url, data){
         function make_request(resolve, reject){
             const req = new XMLHttpRequest();
@@ -212,12 +218,19 @@
         return new Promise(make_request);
     });
     
+    /* 
+     * Adds a CSS style to the document
+     */
     set_global('add_style', function add_style(style){
         const elem = document.createElement('style');
         elem.innerHTML = style;
         document.body.appendChild(elem);
     });
-
+    
+    /* 
+     * Registers an event handler that's executed *before* the given DOM
+     * element's click event is fired
+     */
     set_global('before_click', function before_click(predicate, callback, ...arguments){
         if (typeof predicate === 'function'){
             window.addEventListener('click', function(event){
@@ -231,7 +244,11 @@
             }, true);
         }
     });
-
+    
+    /* 
+     * Given a DOM element and a predicate, returns the first parent element
+     * for which the predicate returns true
+     */
     set_global('find_parent', function find_parent(element, predicate){
         var parent = element;
         while (true){
@@ -243,7 +260,10 @@
                 return parent;
         }
     });
-
+    
+    /* 
+     * Adds a DOM element above the bottom right corner of another DOM element
+     */
     set_global('add_overlay_widget', function add_overlay_widget(base_element, widget){
         var parent = base_element.parentElement;
         const parent_class = '_lib_overlay_menu_parent';
@@ -298,7 +318,11 @@
         
         add_overlay_widget(base_element, button);
     });
-
+    
+    /* 
+     * Creates a MutationObserver that automatically disconnects itself after
+     * a certain time of inactivity
+     */
     set_global('create_timeout_MutationObserver', function create_timeout_MutationObserver(func, timeout){
         var observer_timeout;
         var observer;
@@ -318,7 +342,11 @@
         observer = new MutationObserver(on_dom_mutation);
         return observer;
     });
-
+    
+    /* 
+     * Executes a callback function after the given DOM element hasn't been
+     * mutated for a certain amount of time
+     */
     set_global('run_after_last_mutation', function run_after_last_mutation(func, timeout, element, config){
         if (config === undefined)
             config = {childList: true, subtree: true};
@@ -339,7 +367,10 @@
         const observer = new MutationObserver(on_dom_mutation);
         observer.observe(element, config);
     });
-
+    
+    /* 
+     * Makes a bunch of DOM elements draggable and reorderable
+     */
     set_global('make_dragdrop_reorderable', function make_dragdrop_reorderable(elements, get_id, get_by_id, on_reorder){
         function find_insert_position(x, y, elements){
             let rects = elements.map(e => e.getBoundingClientRect());
@@ -404,7 +435,10 @@
         parent.ondragover = on_drag_over;
         parent.ondrop = on_drop;
     });
-
+    
+    /* 
+     * Creates a Promise that's automatically rejected after a certain timeout
+     */
     set_global('promise_timeout', function promise_timeout(promise, ms){
       // Create a promise that rejects in <ms> milliseconds
       let timeout = new Promise((resolve, reject) => {
