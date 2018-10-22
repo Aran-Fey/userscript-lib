@@ -1,17 +1,10 @@
 (function(){
-    /* 
-     * Sets a global variable.
-     */
     function set_global(name, value){
         window[name] = value;
         
         if (typeof unsafeWindow !== 'undefined')
             unsafeWindow[name] = value;
     }
-    /* 
-     * Retrieves the value of a global variable or undefined if that variable
-     * doesn't exist.
-     */
     function get_global(name){
         var value = window[name];
         if (value !== undefined)
@@ -30,9 +23,26 @@
     set_global('set_global', set_global);
     set_global('get_global', get_global);
     
-    /* 
-     * Convenience base class with some useful methods
-     */
+    set_global('UserScript', class UserScript {
+        static getValue(name, default_){
+            if (typeof GM_getValue !== 'undefined')
+                return new Promise(function(resolve, reject) {
+                    resolve(GM_getValue(name, default_));
+                });
+            else
+                return GM.getValue(name, default_);
+        }
+        
+        static setValue(name, value){
+            if (typeof GM_setValue !== 'undefined')
+                return new Promise(function(resolve, reject) {
+                    resolve(GM_setValue(name, value));
+                });
+            else
+                return GM.setValue(name, value);
+        }
+    });
+    
     set_global('BaseClass', class BaseClass {
         clone(){
             return Object.create(this);
@@ -50,32 +60,27 @@
         }
     });
     
-    /* 
-     * Sorts an array based on a key function. Returns a new array.
-     */
-    set_global('keyed_sort', function keyed_sort(arr, keyfunc){
+    set_global('keyed_sort', function(arr, keyfunc){
         const keyedArr = arr.map(obj => [keyfunc(obj), obj]);
         keyedArr.sort((a, b) => a[0] - b[0])
         
         return keyedArr.map(pair => pair[1]);
     });
     
-    /* 
-     * Class that transparently wraps around an existing DOM element
-     */
-    set_global('ElementWrapper', class ElementWrapper extends BaseClass {
+    const _instances_by_element = new Map();
+    set_global('ElementWrapper', class extends BaseClass {
         constructor(element){
             super();
             this.element = element;
         }
 
         static from_element(element){
-            var instance = this._instances_by_element.get(element);
+            var instance = _instances_by_element.get(element);
             if (instance !== undefined)
                 return instance;
 
             instance = new this(element);
-            this._instances_by_element.set(element, instance);
+            _instances_by_element.set(element, instance);
             return instance;
         }
 
@@ -123,15 +128,8 @@
             return this.element.querySelectorAll(selector);
         }
     });
-    ElementWrapper._instances_by_element = new Map();
     
-    /* 
-     * Abstract base class for classes that wrap around an existing DOM element
-     * and can be identified by some sort of unique id.
-     * 
-     * Subclasses must implement the static _get_id(element) method.
-     */
-    set_global('IDElementWrapper', class IDElementWrapper extends ElementWrapper {
+    set_global('IDElementWrapper', class extends ElementWrapper {
         static from_element(element){
             const id = this._get_id(element);
 
@@ -161,17 +159,10 @@
         get id(){
             return this.constructor._get_id(this.element);
         }
-        
-        static _get_id(element){
-            throw 'this method is abstract';
-        }
     });
     IDElementWrapper._instances_by_id = new Map();
     
-    /* 
-     * Sends an asynchronous xhr GET request
-     */
-    set_global('async_xhr_get', function async_xhr_get(url, enable_html){
+    set_global('async_xhr_get', function(url, enable_html){
         function make_request(resolve, reject){
             const req = new XMLHttpRequest();
             
@@ -194,10 +185,7 @@
         return new Promise(make_request);
     });
     
-    /* 
-     * Sends an asynchronous xhr POST request
-     */
-    set_global('async_xhr_post', function async_xhr_post(url, data){
+    set_global('async_xhr_post', function(url, data){
         function make_request(resolve, reject){
             const req = new XMLHttpRequest();
             
@@ -218,20 +206,13 @@
         return new Promise(make_request);
     });
     
-    /* 
-     * Adds a CSS style to the document
-     */
-    set_global('add_style', function add_style(style){
+    set_global('add_style', function(style){
         const elem = document.createElement('style');
         elem.innerHTML = style;
         document.body.appendChild(elem);
     });
-    
-    /* 
-     * Registers an event handler that's executed *before* the given DOM
-     * element's click event is fired
-     */
-    set_global('before_click', function before_click(predicate, callback, ...arguments){
+
+    set_global('before_click', function(predicate, callback, ...arguments){
         if (typeof predicate === 'function'){
             window.addEventListener('click', function(event){
                 if (predicate(event))
@@ -244,12 +225,8 @@
             }, true);
         }
     });
-    
-    /* 
-     * Given a DOM element and a predicate, returns the first parent element
-     * for which the predicate returns true
-     */
-    set_global('find_parent', function find_parent(element, predicate){
+
+    set_global('find_parent', function(element, predicate){
         var parent = element;
         while (true){
             parent = parent.parentElement;
@@ -260,11 +237,8 @@
                 return parent;
         }
     });
-    
-    /* 
-     * Adds a DOM element above the bottom right corner of another DOM element
-     */
-    set_global('add_overlay_widget', function add_overlay_widget(base_element, widget){
+
+    set_global('add_overlay_widget', function(base_element, widget){
         var parent = base_element.parentElement;
         const parent_class = '_lib_overlay_menu_parent';
         
@@ -310,20 +284,16 @@
         const menu = parent.lastChild;
         menu.appendChild(widget);
     });
-    set_global('add_overlay_button', function add_overlay_button(base_element, button_label, callback){
+    set_global('add_overlay_button', function(base_element, button_label, callback){
         const button = document.createElement('A');
         button.textContent = button_label;
         button.style.font_size = 'small';
-        button.onclick = callback;
+        button.addEventListener('click', callback);
         
         add_overlay_widget(base_element, button);
     });
-    
-    /* 
-     * Creates a MutationObserver that automatically disconnects itself after
-     * a certain time of inactivity
-     */
-    set_global('create_timeout_MutationObserver', function create_timeout_MutationObserver(func, timeout){
+
+    set_global('create_timeout_MutationObserver', function(func, timeout){
         var observer_timeout;
         var observer;
         
@@ -342,12 +312,8 @@
         observer = new MutationObserver(on_dom_mutation);
         return observer;
     });
-    
-    /* 
-     * Executes a callback function after the given DOM element hasn't been
-     * mutated for a certain amount of time
-     */
-    set_global('run_after_last_mutation', function run_after_last_mutation(func, timeout, element, config){
+
+    set_global('run_after_last_mutation', function(func, timeout, element, config){
         if (config === undefined)
             config = {childList: true, subtree: true};
         
@@ -367,11 +333,8 @@
         const observer = new MutationObserver(on_dom_mutation);
         observer.observe(element, config);
     });
-    
-    /* 
-     * Makes a bunch of DOM elements draggable and reorderable
-     */
-    set_global('make_dragdrop_reorderable', function make_dragdrop_reorderable(elements, get_id, get_by_id, on_reorder){
+
+    set_global('make_dragdrop_reorderable', function(elements, get_id, get_by_id, on_reorder){
         function find_insert_position(x, y, elements){
             let rects = elements.map(e => e.getBoundingClientRect());
 
@@ -400,7 +363,7 @@
 
         function make_draggable(elem){
             elem.draggable = true;
-            elem.ondragstart = on_drag_start.bind(null, elem);
+            elem.addEventListener('dragstart', on_drag_start.bind(null, elem));
         }
 
         function on_drag_over(event){
@@ -432,14 +395,11 @@
             make_draggable(elem);
         
         let parent = elements[0].parentElement;
-        parent.ondragover = on_drag_over;
-        parent.ondrop = on_drop;
+        parent.addEventListener('dragover', on_drag_over);
+        parent.addEventListener('drop', on_drop);
     });
-    
-    /* 
-     * Creates a Promise that's automatically rejected after a certain timeout
-     */
-    set_global('promise_timeout', function promise_timeout(promise, ms){
+
+    set_global('promise_timeout', function(promise, ms){
       // Create a promise that rejects in <ms> milliseconds
       let timeout = new Promise((resolve, reject) => {
         let id = setTimeout(() => {
