@@ -30,23 +30,6 @@
     set_global('set_global', set_global);
     set_global('get_global', get_global);
     
-    set_global('is_same_object', function is_same_object(obj1, obj2){
-        // check if we're running in a sandbox
-        if (set_global === set_global){
-            // no sandbox, nothing to worry about
-            return obj1 === obj2;
-        }
-        
-        // sandbox, we're screwed
-        // if they're functions, we'll compare them by name
-        // FIXME
-        const obj_type = typeof obj1;
-        if (obj_type === 'function' && obj1.name !== '')
-            return obj1.name === obj2.name;
-        
-        return obj1 === obj2;
-    });
-    
     /* 
      * Compatability layer for different userscript addons
      */
