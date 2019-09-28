@@ -5,8 +5,9 @@
     function set_global(name, value){
         window[name] = value;
         
-        if (typeof unsafeWindow !== 'undefined')
+        if (typeof unsafeWindow !== 'undefined'){
             unsafeWindow[name] = value;
+        }
     }
     /* 
      * Retrieves the value of a global variable or undefined if that variable
@@ -14,17 +15,20 @@
      */
     function get_global(name){
         var value = window[name];
-        if (value !== undefined)
+        if (value !== undefined){
             return value;
+        }
         
-        if (typeof unsafeWindow === 'undefined')
+        if (typeof unsafeWindow === 'undefined'){
             return undefined;
+        }
         
         return unsafeWindow[name];
     }
     
-    if (get_global('USlib') !== undefined)
+    if (get_global('USlib') !== undefined){
         return;
+    }
     set_global('USlib', true);
     
     set_global('set_global', set_global);
@@ -35,21 +39,23 @@
      */
     set_global('UserScript', class UserScript {
         static getValue(name, default_){
-            if (typeof GM_getValue !== 'undefined')
+            if (typeof GM_getValue !== 'undefined'){
                 return new Promise(function(resolve, reject) {
                     resolve(GM_getValue(name, default_));
                 });
-            else
+            } else {
                 return GM.getValue(name, default_);
+            }
         }
         
         static setValue(name, value){
-            if (typeof GM_setValue !== 'undefined')
+            if (typeof GM_setValue !== 'undefined'){
                 return new Promise(function(resolve, reject) {
                     resolve(GM_setValue(name, value));
                 });
-            else
+            } else {
                 return GM.setValue(name, value);
+            }
         }
     });
     
@@ -66,8 +72,9 @@
         }
         is_any(classes){
             for (const cls of classes){
-                if (this.is_a(cls))
+                if (this.is_a(cls)){
                     return true;
+                }
             }
             return false;
         }
@@ -78,7 +85,7 @@
      */
     set_global('keyed_sort', function keyed_sort(arr, keyfunc){
         const keyedArr = arr.map(obj => [keyfunc(obj), obj]);
-        keyedArr.sort((a, b) => a[0] - b[0])
+        keyedArr.sort((a, b) => a[0] - b[0]);
         
         return keyedArr.map(pair => pair[1]);
     });
@@ -94,8 +101,9 @@
 
         static from_element(element){
             var instance = this._instances_by_element.get(element);
-            if (instance !== undefined)
+            if (instance !== undefined){
                 return instance;
+            }
 
             instance = new this(element);
             this._instances_by_element.set(element, instance);
@@ -200,17 +208,19 @@
             
             function on_load(e){
                 if (req.readyState === 4){
-                    if (req.status === 200)
+                    if (req.status === 200){
                         resolve(req);
-                    else
+                    } else {
                         reject(req);
+                    }
                 }
             }
             
             req.addEventListener("load", on_load);
             req.open('GET', url);
-            if (enable_html)
+            if (enable_html){
                 req.responseType = 'document';
+            }
             req.send();
         }
         
@@ -226,10 +236,11 @@
             
             function on_load(e){
                 if (req.readyState === 4){
-                    if (req.status === 200)
+                    if (req.status === 200){
                         resolve(req);
-                    else
+                    } else {
                         reject(req);
+                    }
                 }
             }
             
@@ -257,13 +268,15 @@
     set_global('before_click', function before_click(predicate, callback, ...arguments){
         if (typeof predicate === 'function'){
             window.addEventListener('click', function(event){
-                if (predicate(event))
+                if (predicate(event)){
                     callback(...arguments);
+                }
             }, true);
         } else { // if it's not a callback, it must be an element
             predicate.parentElement.addEventListener('click', function(event){
-                if (event.target === predicate)
+                if (event.target === predicate){
                     callback(...arguments);
+                }
             }, true);
         }
     });
@@ -276,11 +289,13 @@
         var parent = element;
         while (true){
             parent = parent.parentElement;
-            if (parent === null)
+            if (parent === null){
                 return null;
+            }
             
-            if (predicate(parent))
+            if (predicate(parent)){
                 return parent;
+            }
         }
     });
     
@@ -352,7 +367,6 @@
         
         function disconnect(){
             observer.disconnect();
-            // console.log('observer disconnected');
         }
         
         function on_dom_mutation(mutations, observer){
@@ -371,14 +385,14 @@
      * mutated for a certain amount of time
      */
     set_global('run_after_last_mutation', function run_after_last_mutation(func, timeout, element, config){
-        if (config === undefined)
+        if (config === undefined){
             config = {childList: true, subtree: true};
+        }
         
         var observer_timeout;
         
         function disconnect(){
             observer.disconnect();
-            // console.log('observer disconnected');
             func();
         }
         
@@ -402,16 +416,18 @@
             for (; i < rects.length; i++){
                 let rect = rects[i];
 
-                if (y <= rect.bottom)
+                if (y <= rect.bottom){
                     break;
+                }
             }
 
             for (; i < rects.length; i++){
                 let rect = rects[i];
                 let center = (rect.x + rect.right) / 2;
 
-                if (x < center)
+                if (x < center){
                     break;
+                }
             }
             return i;
         }
@@ -439,10 +455,11 @@
 
             let parent = elem.parentElement;
             if (new_index !== cur_index){
-                if (new_index === elements.length)
+                if (new_index === elements.length){
                     parent.appendChild(elem);
-                else
+                } else {
                     parent.insertBefore(elem, elements[new_index]);
+                }
                 // FIXME: move the element in the `elements` list
             }
             
@@ -451,8 +468,9 @@
             event.preventDefault();
         }
         
-        for (let elem of elements)
+        for (let elem of elements){
             make_draggable(elem);
+        }
         
         let parent = elements[0].parentElement;
         parent.ondragover = on_drag_over;
