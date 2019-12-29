@@ -70,6 +70,7 @@
         is_a(cls){
             return this.constructor === cls;
         }
+        
         is_any(classes){
             for (const cls of classes){
                 if (this.is_a(cls)){
@@ -79,6 +80,42 @@
             return false;
         }
     });
+    
+    /* 
+     * Copies arbitrary text to the clipboard.
+     */
+    set_global('clipboard_set', function clipboard_set(text) {
+        function copy_with_navigator(text){
+            navigator.clipboard.writeText(text).then(
+                function(){},
+                function(err) {
+                    console.error('Async: Could not copy text: ', err);
+                }
+            );
+        }
+        
+        function copy_with_textarea(text){
+            var textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                var successful = document.execCommand('copy');
+            } catch (err) {
+                console.error('Fallback: Oops, unable to copy', err);
+            }
+
+            document.body.removeChild(textArea);
+        }
+        
+        if (navigator.clipboard) {
+            copy_with_navigator(text);
+        } else {
+            copy_with_textarea(text);
+        }
+    }
     
     /* 
      * Sorts an array based on a key function. Returns a new array.
