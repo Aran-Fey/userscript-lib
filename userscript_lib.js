@@ -115,7 +115,7 @@
         } else {
             copy_with_textarea(text);
         }
-    }
+    });
     
     /* 
      * Sorts an array based on a key function. Returns a new array.
